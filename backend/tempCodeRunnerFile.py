@@ -1,1 +1,2 @@
-db = sqlite3.connect("dns.db")
+
+        self.create_widgets()

@@ -28,7 +28,7 @@ class DatabaseInitiator:
 
         try:
             self.cursor.execute("CREATE TABLE servers(hostname, ipAddress, type)")
-            self.cursor.execute("CREATE TABLE logs(hostnameBefore, hostnameAfter, ipAddressBefore, ipAddressAfter, time)")
+            self.cursor.execute("CREATE TABLE logs(hostname, ipAddress, action, time)")
 
             self.db.commit()
 
