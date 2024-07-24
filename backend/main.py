@@ -3,8 +3,7 @@ import tkinter as tk
 from tkinter import ttk
 import sys
 import os
-from PIL import Image
-from PIL import ImageTk
+from PIL import Image, ImageTk
 
 # Adjust the system path to import from the backend directory
 #sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'backend'))
@@ -19,6 +18,7 @@ class Application(tk.Tk):
         self.title("Friendly DNS")
         self.geometry("1280x720")
         self._frame = None
+        #self.iconbitmap("friendly-DNS\\backend\\assets\SmileyFace.png")
         self.create_sidebar()
         self.switch_frame(HomePage)
 
@@ -28,10 +28,20 @@ class Application(tk.Tk):
         sidebar.pack(side=tk.LEFT, fill=tk.Y)
 
         # Load the logo image
-        logo_image = tk.PhotoImage(file="friendly-DNS\\backend\\assets\\finally-a-pictue.png")  # Replace with your image path
-        logo = tk.Label(sidebar, image=logo_image)
+        #logo_image = tk.PhotoImage(file="friendly-DNS\\backend\\assets\Friendly-DNS-logo.png")  # Replace with your image path
+        img = Image.open("friendly-DNS\\backend\\assets\Friendly-DNS-logo.png")
+        img = img.resize((250, 50), Image.ANTIALIAS)
+        #logo = tk.Label(sidebar, image=logo_image)
         # logo.image = logo_image 
-        logo.pack(pady=20)
+        #logo.pack(pady=20)
+
+            # Convert to PhotoImage
+        photo_img = ImageTk.PhotoImage(img)
+
+        # Create a label to hold the image
+        logo_label = ttk.Label(sidebar, image=photo_img)
+        logo_label.image = photo_img  # Keep a reference!
+        logo_label.pack(side="top", pady=10)  # Pack at the top of the window
 
         # Add the sidebar buttons
         home_button = ttk.Button(sidebar, text="Home", command=lambda: self.switch_frame(HomePage))
@@ -58,17 +68,43 @@ class HomePage(tk.Frame):
         self.create_widgets()
 
     def create_widgets(self):
-        mid_top_frame = ttk.Frame(self)
+        '''mid_top_frame = ttk.Frame(self)
         mid_top_frame.pack(fill=tk.X, padx=10, pady=10)
 
-        avg_load = load_average()
-        uptime_str = uptime() 
+        avg_load = 
+        uptime_str = 
 
         load_system = ttk.Label(mid_top_frame, text=avg_load, background="lightgrey", padding=10)
         uptime_system = ttk.Label(mid_top_frame, text=uptime_str, background="lightgrey", padding=10)
 
-        load_system.pack(side=tk.LEFT, padx=5, pady=5)
-        uptime_system.pack(side=tk.LEFT, padx=5, pady=5)
+        load_system.pack(side=tk.LEFT, padx=20, pady=5)
+        uptime_system.pack(side=tk.LEFT, padx=20, pady=5)'''
+
+        # Frame for load average and uptime
+        mid_top_frame = ttk.Frame(self)
+        mid_top_frame.pack(fill=tk.X, padx=10, pady=10)
+
+        avg_load = "Load Average:   " + load_average()
+        uptime_str = uptime() 
+        
+        load_system = ttk.Label(mid_top_frame, text=avg_load, background="lightgrey", padding=10)
+        uptime_system = ttk.Label(mid_top_frame, text=uptime_str, background="lightgrey", padding=10)
+
+        load_system.pack(side=tk.LEFT, padx=20, pady=5)
+        uptime_system.pack(side=tk.LEFT, padx=20, pady=5)
+
+        # Add a title label below the load and uptime widgets
+        title_label = ttk.Label(self, text="Welcome to Friendly DNS", font=('Helvetica', 16, 'bold'))
+        title_label.pack(pady=20)  # Adding some padding for visual separation
+
+        # Description text
+        text_label = ttk.Label(self, text="This program was created by Maria Eduarda Joazeiro Gomes for my Senior Design project (Summer 2024). \n\nThe idea of this project is to provide networking beginners with a simple UI that will allow them to easily manage a Linux VM acting as a DNS server on their network", font=('Helvetica', 12), wraplength=500, justify=tk.CENTER)
+        text_label.pack(pady=20)
+
+        my_system_info = grab_system_info()
+        ttk.Label(self, text=f"CPU: {my_system_info['cpu']}", font=('Helvetica', 10)).pack(anchor=tk.W)
+        ttk.Label(self, text=f"RAM: {my_system_info['ram']}", font=('Helvetica', 10)).pack(anchor=tk.W)
+        ttk.Label(self, text=f"OS: {my_system_info['os']}", font=('Helvetica', 10)).pack(anchor=tk.W)
 
 class AllServersPage(tk.Frame):
     def __init__(self, master):
