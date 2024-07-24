@@ -1,0 +1,1 @@
+db = sqlite3.connect("dns.db")
