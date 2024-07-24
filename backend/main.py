@@ -101,10 +101,15 @@ class HomePage(tk.Frame):
         text_label = ttk.Label(self, text="This program was created by Maria Eduarda Joazeiro Gomes for my Senior Design project (Summer 2024). \n\nThe idea of this project is to provide networking beginners with a simple UI that will allow them to easily manage a Linux VM acting as a DNS server on their network", font=('Helvetica', 12), wraplength=500, justify=tk.CENTER)
         text_label.pack(pady=20)
 
+        spacer_frame = ttk.Frame(self, height=80)
+        spacer_frame.pack(fill=None, expand=False)
+
         my_system_info = grab_system_info()
-        ttk.Label(self, text=f"CPU: {my_system_info['cpu']}", font=('Helvetica', 10)).pack(anchor=tk.W)
-        ttk.Label(self, text=f"RAM: {my_system_info['ram']}", font=('Helvetica', 10)).pack(anchor=tk.W)
-        ttk.Label(self, text=f"OS: {my_system_info['os']}", font=('Helvetica', 10)).pack(anchor=tk.W)
+        vm_specs_label = ttk.Label(self, text="Specification for the VM used", font=('Helvetica', 12, 'bold'), wraplength=500, justify=tk.CENTER)
+        vm_specs_label.pack(pady=20)
+        ttk.Label(self, text=f"CPU: {my_system_info['cpu']}", font=('Helvetica', 12)).pack(anchor=tk.CENTER)
+        ttk.Label(self, text=f"RAM: {my_system_info['ram']}", font=('Helvetica', 12)).pack(anchor=tk.CENTER)
+        ttk.Label(self, text=f"OS: {my_system_info['os']}", font=('Helvetica', 12)).pack(anchor=tk.CENTER)
 
 class AllServersPage(tk.Frame):
     def __init__(self, master):
