@@ -1,4 +1,6 @@
 from backend_init import backend_client
+import requests
+from constants import Constants
 
 # load average information
 def load_average():
@@ -44,3 +46,162 @@ def grab_system_info():
         output[key] = stdout.read().decode().strip()
     
     return output
+
+def add_local_dns(hostname, ip_address):
+
+    # Split the IP address into its octets
+    octets = ip_address.split('.')
+    
+    # Reverse the order of the octets
+    reversed_octets = octets[::-1]
+    
+    # Join the reversed octets back into a string
+    reversed_ip = '.'.join(reversed_octets)
+
+    # Define file paths
+    forward_file_path = "/path/to/db.maria.local"
+    reverse_file_path = "/path/to/db.100.168.192"
+
+    # Increment serial number in the forward DNS file
+    increment_serial_command_forward = (
+        f"sed -i '/^@       IN      SOA     ns1.maria.local. root.maria.local. (/ "
+        f"{{n; s/^[[:space:]]*[0-9]\\+/&+1/e}}' {forward_file_path}"
+    )
+
+    # Increment serial number in the reverse DNS file
+    increment_serial_command_reverse = (
+        f"sed -i '/^@       IN      SOA     ns1.maria.local. root.maria.local. (/ "
+        f"{{n; s/^[[:space:]]*[0-9]\\+/&+1/e}}' {reverse_file_path}"
+    )
+
+    # Add new entry to the forward DNS file before the MX record
+    add_entry_command_forward = (
+        f"sed -i '/^@       IN      MX      10      mail/i {hostname}    IN    A    {ip_address}' {forward_file_path}"
+    )
+
+    # Add PTR record to the reverse DNS file
+    reverse_ip_last_octet = reversed_ip.split('.')[-1]
+    add_entry_command_reverse = (
+        f"sed -i '/^@       IN      NS      ns1.maria.local./a {reverse_ip_last_octet}     IN    PTR    {hostname}.' {reverse_file_path}"
+    )
+
+    backend_client.client.exec_command(increment_serial_command_forward)
+    backend_client.client.exec_command(increment_serial_command_reverse)
+    backend_client.client.exec_command(add_entry_command_forward)
+    backend_client.client.exec_command(add_entry_command_reverse)
+
+def remove_local_dns(ip_address):
+
+    # Define file paths
+    forward_file_path = "/path/to/db.maria.local"
+    reverse_file_path = "/path/to/db.100.168.192"
+    
+    # Reverse the IP address to get the format for the PTR record
+    reverse_ip = '.'.join(ip_address.split('.')[::-1])
+    
+    # Create the pattern to match in both files
+    forward_pattern = f"{ip_address}"
+    reverse_pattern = f"{reverse_ip}"
+    
+    # Increment serial number in the forward DNS file
+    increment_serial_command_forward = (
+        f"sed -i '/^@       IN      SOA     ns1.maria.local. root.maria.local. (/ "
+        f"{{n; s/^[[:space:]]*[0-9]\\+/&+1/e}}' {forward_file_path}"
+    )
+
+    # Increment serial number in the reverse DNS file
+    increment_serial_command_reverse = (
+        f"sed -i '/^@       IN      SOA     ns1.maria.local. root.maria.local. (/ "
+        f"{{n; s/^[[:space:]]*[0-9]\\+/&+1/e}}' {reverse_file_path}"
+    )
+
+    # Commands to remove entries
+    remove_forward_command = (
+        f"sed -i '/{forward_pattern}/d' {forward_file_path}"
+    )
+    
+    remove_reverse_command = (
+        f"sed -i '/{reverse_pattern}/d' {reverse_file_path}"
+    )
+
+    backend_client.client.exec_command(increment_serial_command_forward)
+    backend_client.client.exec_command(increment_serial_command_reverse)
+    backend_client.client.exec_command(remove_forward_command)
+    backend_client.client.exec_command(remove_reverse_command)
+
+def get_zone_id(hostname):
+        
+    url = "https://api.cloudflare.com/client/v4/zones"
+    headers = {
+        "Authorization": f"Bearer {Constants.API_TOKEN}",
+        "Content-Type": "application/json"
+    }
+    params = {
+        "name": hostname
+    }
+    response = requests.get(url, headers=headers, params=params)
+    response.raise_for_status()
+    zones = response.json()["result"]
+    if zones:
+        return zones[0]["id"]
+    else:
+        raise ValueError("Zone not found")
+
+def add_all_dns(hostname, ip_address):
+    
+    zone_id = get_zone_id(hostname)
+
+    url = f"https://api.cloudflare.com/client/v4/zones/{zone_id}/dns_records"
+    headers = {
+        "Authorization": f"Bearer {Constants.API_TOKEN}",
+        "Content-Type": "application/json"
+    }
+    data = {
+        "type": "A",
+        "name": hostname,
+        "content": ip_address,
+        "ttl": 3600
+    }
+    
+    response = requests.post(url, headers=headers, json=data)
+    response.raise_for_status()
+    
+    return response.json()
+
+def get_record_id(hostname):
+
+    zone_id = get_zone_id(hostname)
+
+    url = f"https://api.cloudflare.com/client/v4/zones/{zone_id}/dns_records"
+    headers = {
+        "Authorization": f"Bearer {Constants.API_TOKEN}",
+        "Content-Type": "application/json"
+    }
+    params = {
+        "name": hostname
+    }
+    response = requests.get(url, headers=headers, params=params)
+    response.raise_for_status()
+    records = response.json()["result"]
+    if records:
+        return records[0]["id"]
+    else:
+        raise ValueError("Record not found")
+
+def remove_all_dns(hostname):
+    
+    zone_id = get_zone_id(hostname)
+    record_id = get_record_id(hostname)
+
+    url = f"https://api.cloudflare.com/client/v4/zones/{zone_id}/dns_records/{record_id}"
+    headers = {
+        "Authorization": f"Bearer {Constants.API_TOKEN}",
+        "Content-Type": "application/json"
+    }
+    response = requests.delete(url, headers=headers)
+    if response.status_code == 200:
+        print("Record deleted successfully")
+    else:
+        response.raise_for_status()
+
+
