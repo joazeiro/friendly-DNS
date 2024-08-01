@@ -45,14 +45,14 @@ class Application(tk.Tk):
 
         # Add the sidebar buttons
         home_button = ttk.Button(sidebar, text="Home", command=lambda: self.switch_frame(HomePage))
-        all_servers_button = ttk.Button(sidebar, text="All Servers", command=lambda: self.switch_frame(AllServersPage))
+        #all_servers_button = ttk.Button(sidebar, text="All Servers", command=lambda: self.switch_frame(AllServersPage))
         local_servers_button = ttk.Button(sidebar, text="Local Servers", command=lambda: self.switch_frame(LocalServersPage))
         logs_button = ttk.Button(sidebar, text="Logs", command=lambda: self.switch_frame(Logs))
         
-        home_button.pack(fill=tk.X, padx=5, pady=5)
-        all_servers_button.pack(fill=tk.X, padx=5, pady=5)
-        local_servers_button.pack(fill=tk.X, padx=5, pady=5)
-        logs_button.pack(fill=tk.X, padx=5, pady=5)
+        home_button.pack(fill=tk.X, padx=5, pady=10)
+        #all_servers_button.pack(fill=tk.X, padx=5, pady=5)
+        local_servers_button.pack(fill=tk.X, padx=5, pady=10)
+        logs_button.pack(fill=tk.X, padx=5, pady=10)
 
     def switch_frame(self, frame_class):
         """Destroys current frame and replaces it with a new one."""
@@ -68,17 +68,6 @@ class HomePage(tk.Frame):
         self.create_widgets()
 
     def create_widgets(self):
-        '''mid_top_frame = ttk.Frame(self)
-        mid_top_frame.pack(fill=tk.X, padx=10, pady=10)
-
-        avg_load = 
-        uptime_str = 
-
-        load_system = ttk.Label(mid_top_frame, text=avg_load, background="lightgrey", padding=10)
-        uptime_system = ttk.Label(mid_top_frame, text=uptime_str, background="lightgrey", padding=10)
-
-        load_system.pack(side=tk.LEFT, padx=20, pady=5)
-        uptime_system.pack(side=tk.LEFT, padx=20, pady=5)'''
 
         # Frame for load average and uptime
         mid_top_frame = ttk.Frame(self)
@@ -111,7 +100,7 @@ class HomePage(tk.Frame):
         ttk.Label(self, text=f"RAM: {my_system_info['ram']}", font=('Helvetica', 12)).pack(anchor=tk.CENTER)
         ttk.Label(self, text=f"OS: {my_system_info['os']}", font=('Helvetica', 12)).pack(anchor=tk.CENTER)
 
-class AllServersPage(tk.Frame):
+'''class AllServersPage(tk.Frame):
     def __init__(self, master):
         super().__init__(master)
         self.tree = None  # Initialize tree as None
@@ -157,7 +146,7 @@ class AllServersPage(tk.Frame):
                 if self.tree.item(item, "values")[1] == ip_address:
                     self.tree.delete(item)
                     break
-
+'''
 class LocalServersPage(tk.Frame):
     def __init__(self, master):
         super().__init__(master)

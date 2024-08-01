@@ -1,6 +1,7 @@
 import sqlite3
 from database_init import db_client
 import datetime
+from backend_func import *
 
 '''def what_action(action, hostname, ip_address, type):
     if action == "add":
@@ -30,6 +31,8 @@ def add_local_server(hostname, ip_address):
     new_log_entry(hostname, ip_address, "Added", date)
 
     db_client.db.commit()
+
+    add_local_dns(hostname, ip_address)
     
 
 def add_all_server(hostname, ip_address):
@@ -42,6 +45,8 @@ def add_all_server(hostname, ip_address):
     new_log_entry(hostname, ip_address, "Added", date)
 
     db_client.db.commit()
+
+    add_all_dns(hostname, ip_address)
 
 def remove_local_server(ip_address):
     '''sql_command = "DELETE FROM servers WHERE ipAddress = ? AND type = ?"
@@ -72,6 +77,8 @@ def remove_local_server(ip_address):
 
     db_client.db.commit()
 
+    remove_local_dns(ip_address)
+
 def remove_all_server(ip_address):
     
     type = "all"
@@ -92,6 +99,8 @@ def remove_all_server(ip_address):
     new_log_entry(grab_hostname, ip_address, "Deleted", date)
 
     db_client.db.commit()
+
+    remove_all_dns(grab_hostname)
 
 def new_log_entry(hostname, ip_address, action, time):
 

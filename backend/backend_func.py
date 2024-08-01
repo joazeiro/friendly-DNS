@@ -4,14 +4,6 @@ from constants import Constants
 
 # load average information
 def load_average():
-    '''load_command = "uptime"
-    stdin, stdout, stderr = backend_client.client.exec_command(load_command)
-
-    output = stdout.read().decode().strip()
-    load_avg_str = output.split('load average:')[1].strip()
-    load_averages = load_avg_str.split(',')
-
-    return load_averages'''
 
     load_command = "uptime"
     stdin, stdout, stderr = backend_client.client.exec_command(load_command)
@@ -47,6 +39,29 @@ def grab_system_info():
     
     return output
 
+def update_serial_number(file_path):
+    # Define the path to the zone files
+    forward_file_path = '/etc/bind/db.maria.local'
+    reverse_file_path = '/etc/bind/db.100.168.192'
+
+    # Define the commands for extracting, incrementing, and updating the serial number
+    extract_serial_command = f"awk '/^@.*IN.*SOA.*ns1.maria.local.*root.maria.local/ {{ getline; print $1 }}' {file_path}"
+
+    # Extract the current serial number
+    stdin, stdout, stderr = backend_client.client.exec_command(extract_serial_command)
+    current_serial = stdout.read().decode().strip()
+
+    # Increment and update the serial number in the file
+    new_serial = str(int(current_serial) + 1)
+
+    increment_serial_command = (
+        f"sudo sed -i -e '/^@\\s\\+IN\\s\\+SOA\\s\\+ns1.maria.local\\.\\s\\+root.maria.local\\.\\s\\+(/ "
+        f"{{n; s/^[[:space:]]*[0-9]\\+/\t\t\t{new_serial}/}}' {file_path}"
+    )
+
+    backend_client.client.exec_command(increment_serial_command)
+
+
 def add_local_dns(hostname, ip_address):
 
     # Split the IP address into its octets
@@ -59,75 +74,53 @@ def add_local_dns(hostname, ip_address):
     reversed_ip = '.'.join(reversed_octets)
 
     # Define file paths
-    forward_file_path = "/path/to/db.maria.local"
-    reverse_file_path = "/path/to/db.100.168.192"
+    forward_file_path = "/etc/bind/db.maria.local"
+    reverse_file_path = "/etc/bind/db.100.168.192"
 
-    # Increment serial number in the forward DNS file
-    increment_serial_command_forward = (
-        f"sed -i '/^@       IN      SOA     ns1.maria.local. root.maria.local. (/ "
-        f"{{n; s/^[[:space:]]*[0-9]\\+/&+1/e}}' {forward_file_path}"
-    )
-
-    # Increment serial number in the reverse DNS file
-    increment_serial_command_reverse = (
-        f"sed -i '/^@       IN      SOA     ns1.maria.local. root.maria.local. (/ "
-        f"{{n; s/^[[:space:]]*[0-9]\\+/&+1/e}}' {reverse_file_path}"
-    )
-
-    # Add new entry to the forward DNS file before the MX record
     add_entry_command_forward = (
-        f"sed -i '/^@       IN      MX      10      mail/i {hostname}    IN    A    {ip_address}' {forward_file_path}"
+        f"sudo sed -i '/^@\tIN\tMX\t10\tmail/i {hostname}\tIN\tA\t{ip_address}' {forward_file_path}"
     )
 
     # Add PTR record to the reverse DNS file
-    reverse_ip_last_octet = reversed_ip.split('.')[-1]
+    reverse_ip_last_octet = reversed_ip.split('.')[0]
     add_entry_command_reverse = (
-        f"sed -i '/^@       IN      NS      ns1.maria.local./a {reverse_ip_last_octet}     IN    PTR    {hostname}.' {reverse_file_path}"
+        f"sudo sed -i '/^@\tIN\tNS\tns1.maria.local./a {reverse_ip_last_octet}\tIN\tPTR\t{hostname}.' {reverse_file_path}"
     )
 
-    backend_client.client.exec_command(increment_serial_command_forward)
-    backend_client.client.exec_command(increment_serial_command_reverse)
+    update_serial_number(forward_file_path)
+    update_serial_number(reverse_file_path)
     backend_client.client.exec_command(add_entry_command_forward)
     backend_client.client.exec_command(add_entry_command_reverse)
+    backend_client.client.exec_command("sudo rndc reload maria.local")
 
 def remove_local_dns(ip_address):
 
     # Define file paths
-    forward_file_path = "/path/to/db.maria.local"
-    reverse_file_path = "/path/to/db.100.168.192"
+    forward_file_path = "/etc/bind/db.maria.local"
+    reverse_file_path = "/etc/bind/db.100.168.192"
     
     # Reverse the IP address to get the format for the PTR record
     reverse_ip = '.'.join(ip_address.split('.')[::-1])
+    reverse_ip_last_octet = reverse_ip.split('.')[0]
     
     # Create the pattern to match in both files
     forward_pattern = f"{ip_address}"
-    reverse_pattern = f"{reverse_ip}"
-    
-    # Increment serial number in the forward DNS file
-    increment_serial_command_forward = (
-        f"sed -i '/^@       IN      SOA     ns1.maria.local. root.maria.local. (/ "
-        f"{{n; s/^[[:space:]]*[0-9]\\+/&+1/e}}' {forward_file_path}"
-    )
-
-    # Increment serial number in the reverse DNS file
-    increment_serial_command_reverse = (
-        f"sed -i '/^@       IN      SOA     ns1.maria.local. root.maria.local. (/ "
-        f"{{n; s/^[[:space:]]*[0-9]\\+/&+1/e}}' {reverse_file_path}"
-    )
+    reverse_pattern = f"{reverse_ip_last_octet}"
 
     # Commands to remove entries
     remove_forward_command = (
         f"sed -i '/{forward_pattern}/d' {forward_file_path}"
     )
-    
+
     remove_reverse_command = (
         f"sed -i '/{reverse_pattern}/d' {reverse_file_path}"
     )
 
-    backend_client.client.exec_command(increment_serial_command_forward)
-    backend_client.client.exec_command(increment_serial_command_reverse)
+    update_serial_number(forward_file_path)
+    update_serial_number(reverse_file_path)
     backend_client.client.exec_command(remove_forward_command)
     backend_client.client.exec_command(remove_reverse_command)
+    backend_client.client.exec_command("sudo rndc reload maria.local")
 
 def get_zone_id(hostname):
         
